@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🐶 Мопс Ламар — Путь к успеху</title>
+<style>
+  * { box-sizing: border-box; user-select: none; font-family: 'Segoe UI', Tahoma, sans-serif; }
+  body {
+    margin: 0; min-height: 100vh;
+    background: #141622; color: #fff;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    padding: 15px; transition: background 0.5s;
+  }
+  .app {
+    width: 100%; max-width: 440px;
+    background: #1f2235; border-radius: 26px; padding: 20px;
+    box-shadow: 0 20px 45px rgba(0,0,0,0.6); border: 2px solid #2e3352;
+  }
+  .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+  .room-badge { background: #383e63; padding: 5px 12px; border-radius: 12px; font-size: 13px; font-weight: bold; color: #ffd166; }
+  .money-box { font-size: 24px; font-weight: 900; color: #06d6a0; }
+  .sub-stats { display: flex; justify-content: space-between; font-size: 13px; color: #a0a6c9; margin-bottom: 15px; background: #161826; padding: 8px 14px; border-radius: 12px; }
+
+  /* Сцена с мопсом */
+  .stage {
+    position: relative; height: 240px; border-radius: 20px;
+    background: linear-gradient(180deg, #3a322d 0%, #241e1b 100%);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; overflow: hidden; border: 2px solid #444;
+    transition: all 0.4s;
+  }
+  .stage:active { transform: scale(0.98); }
+  .stage.rich { background: linear-gradient(180deg, #4b2c7a 0%, #1d1536 100%); border-color: #ffd166; }
+
+  /* Контейнер мопса и одежды */
+  .pug-wrapper { position: relative; width: 150px; height: 150px; display: flex; align-items: center; justify-content: center; transition: transform 0.08s; }
+  .stage:active .pug-wrapper { transform: scale(0.92); }
+  .pug-face { font-size: 115px; line-height: 1; z-index: 2; }
+
+  /* Слои одежды на мопсе */
+  .wear-hat { position: absolute; top: -22px; font-size: 56px; z-index: 4; pointer-events: none; }
+  .wear-glasses { position: absolute; top: 38px; font-size: 48px; z-index: 5; pointer-events: none; }
+  .wear-neck { position: absolute; bottom: 2px; font-size: 42px; z-index: 4; pointer-events: none; }
+  .wear-body { position: absolute; bottom: -18px; font-size: 62px; z-index: 1; pointer-events: none; }
+
+  /* Вкладки (Прокачка / Гардероб) */
+  .tabs { display: flex; gap: 10px; margin: 15px 0 12px; }
+  .tab-btn {
+    flex: 1; padding: 10px; border: none; border-radius: 12px;
+    background: #2a2f4a; color: #ccc; font-weight: bold; font-size: 15px; cursor: pointer;
+  }
+  .tab-btn.active { background: #ff9f1c; color: #141622; }
+
+  .list { display: flex; flex-direction: column; gap: 9px; max-height: 250px; overflow-y: auto; padding-right: 4px; }
+  .item {
+    display: flex; justify-content: space-between; align-items: center;
+    background: #282c44; padding: 11px 14px; border-radius: 14px;
+  }
+  .item-info { text-align: left; }
+  .item-title { font-weight: bold; font-size: 14px; }
+  .item-desc { font-size: 12px; color: #9fa5c4; }
+
+  .action-btn {
+    padding: 8px 14px; border: none; border-radius: 10px;
+    font-weight: bold; font-size: 13px; cursor: pointer; min-width: 95px;
+  }
+  .btn-buy { background: #06d6a0; color: #111; }
+  .btn-buy:disabled { background: #3b405e; color: #777; cursor: not-allowed; }
+  .btn-wear { background: #4ea8de; color: #fff; }
+  .btn-equipped { background: #ffd166; color: #111; }
+
+  .float {
+    position: fixed; font-weight: 900; font-size: 20px; color: #06d6a0;
+    pointer-events: none; animation: up 0.7s ease-out forwards; z-index: 99;
+  }
+  @keyframes up {
+    0% { opacity: 1; transform: translateY(0); }
+    100% { opacity: 0; transform: translateY(-60px); }
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <div class="header">
+    <div class="room-badge" id="roomName">🏚️ Старый гараж</div>
+    <div class="money-box" id="money">0 $</div>
+  </div>
+  <div class="sub-stats">
+    <span>👆 За тап: <b id="perClick">1 $</b></span>
+    <span>📹 Стрим в сек: <b id="perSec">0 $</b></span>
+  </div>
+
+  <!-- Сцена с мопсом, на которого надевается одежда -->
+  <div class="stage" id="stage" onclick="tapPug(event)">
+    <div class="pug-wrapper">
+      <div class="wear-hat" id="slotHat"></div>
+      <div class="wear-glasses" id="slotGlasses"></div>
+      <div class="pug-face">🐶</div>
+      <div class="wear-neck" id="slotNeck"></div>
+      <div class="wear-body" id="slotBody"></div>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab-btn active" id="tabUpg" onclick="switchTab('upg')">📈 Прокачка</button>
+    <button class="tab-btn" id="tabCloth" onclick="switchTab('cloth')">👕 Гардероб мопса</button>
+  </div>
+
+  <div class="list" id="contentList"></div>
+</div>
+
+<script>
+  const CLOTHES = [
+    { id: 'cap', slot: 'hat', icon: '🧢', name: 'Кепка новичка', bonus: '+2 к тапу', clickBonus: 2, price: 30 },
+    { id: 'glasses', slot: 'glasses', icon: '🕶️', name: 'Чёрные очки', bonus: '+5 к тапу', clickBonus: 5, price: 120 },
+    { id: 'hoodie', slot: 'body', icon: '👕', name: 'Стильная футболка', bonus: '+10 к тапу', clickBonus: 10, price: 300 },
+    { id: 'chain', slot: 'neck', icon: '📿', name: 'Золотая цепь', bonus: '+25 к тапу', clickBonus: 25, price: 800 },
+    { id: 'headphones', slot: 'hat', icon: '🎧', name: 'Наушники стримера', bonus: '+50 к тапу', clickBonus: 50, price: 2000 },
+    { id: 'crown', slot: 'hat', icon: '👑', name: 'Корона миллиардера', bonus: '+150 к тапу', clickBonus: 150, price: 6000 }
+  ];
+
+  const UPGRADES = [
+    { id: 'phone', name: '📱 Старый телефон', desc: '+1 $ в сек (стрим)', sec: 1, basePrice: 25 },
+    { id: 'mic', name: '🎙️ Микрофон петличка', desc: '+5 $ в сек', sec: 5, basePrice: 150 },
+    { id: 'pc', name: '💻 Игровой ПК', desc: '+20 $ в сек', sec: 20, basePrice: 700 },
+    { id: 'studio', name: '🏢 Своя студия в США', desc: '+85 $ в сек', sec: 85, basePrice: 3000 }
+  ];
+
+  let state = JSON.parse(localStorage.getItem('pugLamarSave')) || {
+    money: 0,
+    upgCounts: { phone: 0, mic: 0, pc: 0, studio: 0 },
+    ownedClothes: [],
+    equipped: { hat: null, glasses: null, neck: null, body: null }
+  };
+
+  let currentTab = 'upg';
+
+  function save() {
+    localStorage.setItem('pugLamarSave', JSON.stringify(state));
+  }
+
+  function getStats() {
+    let click = 1;
+    let sec = 0;
+
+    // Бонус от надетой одежды
+    Object.values(state.equipped).forEach(itemId => {
+      const item = CLOTHES.find(c => c.id === itemId);
+      if (item) click += item.clickBonus;
+    });
+
+    // Доход в секунду от техники
+    UPGRADES.forEach(u => {
+      sec += (state.upgCounts[u.id] || 0) * u.sec;
+    });
+
+    return { click, sec };
+  }
+
+  function renderPugClothes() {
+    const slots = ['hat', 'glasses', 'neck', 'body'];
+    const domMap = { hat: 'slotHat', glasses: 'slotGlasses', neck: 'slotNeck', body: 'slotBody' };
+
+    slots.forEach(s => {
+      const itemId = state.equipped[s];
+      const item = CLOTHES.find(c => c.id === itemId);
+      document.getElementById(domMap[s]).textContent = item ? item.icon : '';
+    });
+
+    // Меняем комнату, если денег или прокачки много
+    const stage = document.getElementById('stage');
+    const roomName = document.getElementById('roomName');
+    const totalUpg = Object.values(state.upgCounts).reduce((a, b) => a + b, 0);
+
+    if (totalUpg >= 10) {
+      stage.classList.add('rich');
+      roomName.textContent = '🏙️ Пентхаус блогера';
+    } else if (totalUpg >= 3) {
+      stage.classList.remove('rich');
+      roomName.textContent = '🛋️ Съёмная квартира';
+    } else {
+      stage.classList.remove('rich');
+      roomName.textContent = '🏚️ Старый гараж';
+    }
+  }
+
+  function updateUI() {
+    const { click, sec } = getStats();
+    document.getElementById('money').textContent = Math.floor(state.money) + ' $';
+    document.getElementById('perClick').textContent = click + ' $';
+    document.getElementById('perSec').textContent = sec + ' $';
+    renderPugClothes();
+    renderList();
+  }
+
+  function switchTab(tab) {
+    currentTab = tab;
+    document.getElementById('tabUpg').classList.toggle('active', tab === 'upg');
+    document.getElementById('tabCloth').classList.toggle('active', tab === 'cloth');
+    renderList();
+  }
+
+  function renderList() {
+    const list = document.getElementById('contentList');
+    list.innerHTML = '';
+
+    if (currentTab === 'upg') {
+      UPGRADES.forEach(u => {
+        const count = state.upgCounts[u.id] || 0;
+        const price = Math.round(u.basePrice * Math.pow(1.4, count));
+        const div = document.createElement('div');
+        div.className = 'item';
+        div.innerHTML = `
+          <div class="item-info">
+            <div class="item-title">${u.name} (ур. ${count})</div>
+            <div class="item-desc">${u.desc}</div>
+          </div>
+          <button class="action-btn btn-buy" ${state.money < price ? 'disabled' : ''} onclick="buyUpgrade('${u.id}', ${price})">${price} $</button>
+        `;
+        list.appendChild(div);
+      });
+    } else {
+      CLOTHES.forEach(c => {
+        const owned = state.ownedClothes.includes(c.id);
+        const equipped = state.equipped[c.slot] === c.id;
+        let btnHtml = '';
+
+        if (!owned) {
+          btnHtml = `<button class="action-btn btn-buy" ${state.money < c.price ? 'disabled' : ''} onclick="buyCloth('${c.id}')">Купить ${c.price} $</button>`;
+        } else if (equipped) {
+          btnHtml = `<button class="action-btn btn-equipped" onclick="toggleCloth('${c.id}')">Снять</button>`;
+        } else {
+          btnHtml = `<button class="action-btn btn-wear" onclick="toggleCloth('${c.id}')">Надеть</button>`;
+        }
+
+        const div = document.createElement('div');
+        div.className = 'item';
+        div.innerHTML = `
+          <div class="item-info">
+            <div class="item-title">${c.icon} ${c.name}</div>
+            <div class="item-desc">${c.bonus} (когда надето)</div>
+          </div>
